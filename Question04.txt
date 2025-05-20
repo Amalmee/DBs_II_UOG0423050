@@ -1,0 +1,15 @@
+CREATE DATABASE ABXCompany;
+
+\c ABXCompany
+
+CREATE TABLE products (
+    product_id SERIAL PRIMARY KEY,
+    name TEXT,
+    price NUMERIC(10, 2),
+    stock_quantity INT  );
+
+INSERT INTO products(name, price, stock_quantity)
+VALUES ('Bluetooth Speakers', 49,500.00, 05);
+
+
+SELECT * FROM products;
