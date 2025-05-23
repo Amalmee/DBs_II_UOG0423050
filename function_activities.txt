@@ -1,0 +1,97 @@
+Activity 01
+
+CREATE OR REPLACE FUNCTION is_even(num INT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+AS $$
+DECLARE
+is_even_result BOOLEAN;
+BEGIN
+  IF(num%2 =0) THEN
+     is_even_result := TRUE;
+  ELSE
+     is_even_result := FALSE;
+  END IF;
+RETURN is_even_result;
+END;
+$$;
+
+function call
+SELECT is_even(27);
+
+
+Activity 02
+
+CREATE OR REPLACE FUNCTION get_stock(p_id INT)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+   stock_quantity INT;
+BEGIN
+   SELECT p.stock_quantity into stock_quantity  
+   FROM product p
+   WHERE p.product_id = p_id;
+RETURN stock_quantity;
+END;
+$$;
+
+function call
+SELECT get_stock(1);
+
+Activity 03
+
+CREATE OR REPLACE FUNCTION get_product_name(p_id INT)
+LANGUAGE plpgsql;
+RETURNS VARCHAR 
+AS $$ 
+DECLARE
+     pname VARCHAR;
+BEGIN
+     SELECT product_name INTO p_name
+     FROM product
+     WHERE product_id = p_id;
+    
+        RETURN p_name;
+ END;
+ $$;
+
+function call
+SELECT get_product_name(101);
+
+
+Activity 04
+
+CREATE OR REPLACE FUNCTION reduce_price()     
+RETURNS VOID                                  
+LANGUAGE plpgsql                              
+AS $$                                            
+BEGIN                                            
+  UPDATE product                              
+  SET price = price * 0.75
+  WHERE stock_quantity >20;
+END;
+$$;
+
+function call
+SELECT reduce_price(120);
+
+
+Activity 05
+
+CREATE OR REPLACE FUNCTION get_stock_value(product_id INT)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+ total_stock_value DECIMAL(10,2); 
+BEGIN
+  SELECT price * stock_quantity INTO total_stock_value
+  FROM product
+  WHERE product_id = p_id;
+
+IF total_stock_value IS NULL THEN
+  RAISE EXCEPTION 'Product with ID % does not exist.', product_id;
+END IF;
+END;
+$$;
