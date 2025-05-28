@@ -1,0 +1,171 @@
+ CREATE TABLE product(product_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, product_name VARCHAR(50), price DECIMAL);
+
+ CREATE TABLE product_log(log_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, action VARCHAR(50), action_time TIME);
+
+ CREATE TABLE unavailable_products(log_id INT, product_id INT, product_name VARCHAR(50) , price DECIMAL, action_time TIME );
+
+ACTIVITY 01
+
+ CREATE OR REPLACE FUNCTION validate_price_function()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ AS $$
+ BEGIN
+     RAISE NOTICE 'Price must greater than 0.00';
+     RETURN NULL;
+ END;
+ $$;
+
+ CREATE TRIGGER validate_product_price
+ BEFORE INSERT OR UPDATE
+ ON product
+ FOR EACH ROW
+ WHEN (NEW.price < 0.0)
+ EXECUTE FUNCTION validate_price_function();
+
+Test
+
+INSERT INTO product (product_name, price) VALUES ('book', 0.0);
+INSERT INTO product (product_name, price) VALUES ('book', 10.0);
+
+
+ACTIVITY 02
+
+CREATE OR REPLACE FUNCTION increase_salary()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+New.salary := New.salary + 7500;
+RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER salary_increment
+ BEFORE INSERT OR UPDATE
+ ON employee
+ FOR EACH ROW
+ WHEN (NEW.salary > 200000)
+ EXECUTE FUNCTION increase_salary();
+
+
+ACTIVITY 03
+
+CREATE OR REPLACE FUNCTION insert_product_lrecord_log()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+INSERT INTO product_log(action , action_time)
+VALUES ('INSERT', CURRENT_TIMESTRAMP);
+RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER insert_product_log
+AFTER INSERT
+ON product
+FOR EACH STATEMENT
+EXECUTE FUNCTION insert_product_record_log();
+
+Test
+
+INSERT INTO product(product_name, price) VALUES ('bag', 5000.00);
+INSERT INTO product(product_name, price) VALUES ('shoes', 3000.00), ('laptop', 600000.00);
+
+
+
+Activity 04
+
+CREATE OR REPLACE FUNCTION log_employee_insert_function()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+INSERT INTO employee_log(emp_id, action, action_time)
+VALUES (NEW.emp_id,'INSERT', CURRENT_TIMESTRAMP);
+RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER log_employee_insert
+AFTER INSERT
+ON employee
+FOR EACH ROW
+EXECUTE FUNCTION log_employee_insert_function();
+
+Test
+
+
+
+Activity 05
+
+CREATE OR REPLACE FUNCTION prevent_price_decrease()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+RAISE NOTICE 'Price decrease is not allowed. Old price: %, New price: %', OLD price, NEW price;
+RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER prevent_price_decrement
+BEFORE UPDATE
+ON product
+FOR EACH ROW
+WHEN (NEW.price <= OLD.price)
+EXECUTE FUNCTION prevent_price_decrease();
+
+
+
+Activity 06
+
+CREATE OR REPLACE FUNCTION log_deleted_product()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+INSERT INTO unavailable_products (product_id, product_name, price, action_time)
+VALUES (OLD.product_id, OLD.product_name, OLD.price, CURRENT_TIMESTRAMP);
+RETURN OLD;
+END;
+$$;
+
+CREATE TRIGGER product_deletion_log
+AFTER DELETE
+ON product
+FOR EACH ROW
+EXECUTE FUNCTION log_deleted_product();
+
+TEST 
+DELETE FROM product WHERE product_id = 1;
+
+
+Activiyt 07
+
+CREATE OR REPLACE FUNCTION truncated_total()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE total_sales DECIMAL (10,2);
+BEGIN
+SELECT SUM(amount) INTO total_sales
+FROM sales_order;
+INSERT INTO monthly_sales (date, total_amount) VALUES (CURRENT_DATE, total_sales);
+RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER before_truncate
+BEFORE TRUNCATE
+ON sales_order
+FOR EACH STATEMENT
+EXECUTE FUNCTION truncated_tota();
+
+Test
+TRUNCATE sales_order;
+
+
+
+
